@@ -63,7 +63,7 @@ export default function VisitorsScreen() {
     };
 
     return (
-        <SafeAreaView style={{ flex: 1, padding: 16 }}>
+        <SafeAreaView style={{ flex: 1, padding: 16  , backgroundColor: "#f0fdf4" }}>
 
             {/* HEADER */}
             <View style={styles.header}>

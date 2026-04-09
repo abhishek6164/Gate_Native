@@ -18,7 +18,9 @@ export default function ProfileScreen({ navigation }) {
     };
 
     return (
-        <SafeAreaView style={{ flex: 1, padding: 20 }}>
+        <SafeAreaView style={{
+            flex: 1, padding: 20, backgroundColor: "#f0fdf4",
+        }}>
 
             <Text style={styles.title}>👤 Profile</Text>
 

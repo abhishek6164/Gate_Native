@@ -24,7 +24,9 @@ export default function CommunityScreen() {
   };
 
   return (
-    <SafeAreaView style={{ flex: 1, padding: 16 }}>
+    <SafeAreaView style={{
+      flex: 1, padding: 16, backgroundColor: "#f0fdf4",
+    }}>
 
       <Text style={styles.title}>👥 Community</Text>
 
