@@ -10,7 +10,7 @@ import Profile from "../screens/common/ProfileScreen";
 
 // GUARD
 import EntryForm from "../screens/guard/EntryForm";
-
+import ApprovedRequestScreen from "../screens/common/ApprovedRequestScreen";
 // ADMIN
 import UserApproval from "../screens/admin/UserApproval";
 import VisitorsScreen from "../screens/common/VisitorsScreen";
@@ -54,6 +54,8 @@ export default function RoleBasedTabs() {
             {role === "GUARD" && (
                 <>
                     <Tab.Screen name="Gate" component={EntryForm} />
+                    <Tab.Screen name="Visitors" component={VisitorsScreen} />
+                    <Tab.Screen name="ApprovedRequestScreen" component={ApprovedRequestScreen} />
                     <Tab.Screen name="Community" component={Community} />
                     <Tab.Screen name="Profile" component={Profile} />
                 </>
