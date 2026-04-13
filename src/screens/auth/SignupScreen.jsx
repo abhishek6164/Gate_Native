@@ -86,7 +86,7 @@ export default function SignupScreen({ navigation }) {
                         <View style={styles.iconCircle}>
                             <Text style={{ fontSize: 32 }}>🏢</Text>
                         </View>
-                        <Text style={styles.title}>Join MyGate</Text>
+                        <Text style={styles.title}>Join Gate</Text>
                         <Text style={styles.subtitle}>Create an account to join your community</Text>
                     </View>
 

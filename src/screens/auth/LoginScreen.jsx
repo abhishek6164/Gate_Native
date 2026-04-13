@@ -68,7 +68,7 @@ export default function LoginScreen({ navigation }) {
                             <Text style={{ fontSize: 32 }}>🏢</Text>
                         </View>
                         <Text style={styles.title}>Welcome Back</Text>
-                        <Text style={styles.subtitle}>Sign in to continue to MyGate</Text>
+                        <Text style={styles.subtitle}>Sign in to continue to Gate</Text>
                     </View>
 
                     {/* Form Section */}
