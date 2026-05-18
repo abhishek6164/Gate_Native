@@ -1,89 +1,206 @@
-//  BASE URL (BAAD ME SIRF YAHI CHANGE KARNA)
-const BASE_URL = "http://localhost:8000/api";
-// baad me:
-// const BASE_URL = "https://your-django-api.com/api";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
+const BASE_URL = "http://192.168.0.177:5000/api";
 
-//  HAR ROLE KE LOGIN IDS (TESTING KE LIYE)
-const usersDB = [{
-        email: "admin@gmail.com",
-        password: "admin123",
-        role: "ADMIN",
-        status: "APPROVED",
-    },
-    {
-        email: "family@gmail.com",
-        password: "family123",
-        role: "FAMILY",
-        status: "APPROVED",
-    },
-    {
-        email: "owner@gmail.com",
-        password: "owner123",
-        role: "OWNER",
-        status: "APPROVED",
-    },
-    {
-        email: "tenant@gmail.com",
-        password: "tenant123",
-        role: "TENANT",
-        status: "APPROVED",
-    },
-    {
-        email: "guard@gmail.com",
-        password: "guard123",
-        role: "GUARD",
-        status: "APPROVED",
-    },
-];
-
-
-//  LOGIN API
-export const loginUser = async (data) => {
-    return new Promise((resolve, reject) => {
-        setTimeout(() => {
-
-            const foundUser = usersDB.find(
-                (u) =>
-                u.email === data.email.trim().toLowerCase() &&
-                u.password === data.password.trim()
-            );
-
-            if (!foundUser) {
-                reject("Wrong credentials");
-            } else {
-                resolve({
-                    token: "fake-token",
-                    user: foundUser,
-                });
-            }
-        }, 800);
-    });
+const getHeaders = async () => {
+    const token = await AsyncStorage.getItem("token");
+    return {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`
+    };
 };
 
-//  SIGNUP API
-// eslint-disable-next-line no-unused-vars
+// ============ AUTH ============
 export const signupUser = async (data) => {
-    //  MOCK
-    return new Promise((resolve) => {
-        setTimeout(() => {
-            resolve({
-                message: "Signup request sent",
-            });
-        }, 800);
+    const res = await fetch(`${BASE_URL}/auth/signup`, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify(data),
     });
-
-    //  BAAD ME
-    /*
-    const res = await fetch(`${BASE_URL}/signup/`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(data),
-    });
-
     const result = await res.json();
+    if (!res.ok) throw new Error(result.message || "Signup failed");
     return result;
-    */
+};
+
+export const loginUser = async (data) => {
+    const res = await fetch(`${BASE_URL}/auth/login`, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify(data),
+    });
+    const result = await res.json();
+    if (!res.ok) throw new Error(result.message || "Login failed");
+    return result;
+};
+
+// ============ ADMIN ============
+export const getPendingUsers = async () => {
+    const res = await fetch(`${BASE_URL}/admin/pending-users`, {
+        headers: await getHeaders()
+    });
+    const result = await res.json();
+    if (!res.ok) throw new Error(result.message);
+    return result;
+};
+
+export const approveUser = async (id) => {
+    const res = await fetch(`${BASE_URL}/admin/approve/${id}`, {
+        method: "PUT",
+        headers: await getHeaders()
+    });
+    const result = await res.json();
+    if (!res.ok) throw new Error(result.message);
+    return result;
+};
+
+export const rejectUser = async (id) => {
+    const res = await fetch(`${BASE_URL}/admin/reject/${id}`, {
+        method: "PUT",
+        headers: await getHeaders()
+    });
+    const result = await res.json();
+    if (!res.ok) throw new Error(result.message);
+    return result;
+};
+
+export const createUser = async (data) => {
+    const res = await fetch(`${BASE_URL}/admin/create-user`, {
+        method: "POST",
+        headers: await getHeaders(),
+        body: JSON.stringify(data)
+    });
+    const result = await res.json();
+    if (!res.ok) throw new Error(result.message);
+    return result;
+};
+
+// ============ COMMON ============
+export const getResidents = async () => {
+    const res = await fetch(`${BASE_URL}/admin/residents`, {
+        headers: await getHeaders()
+    });
+    const result = await res.json();
+    if (!res.ok) throw new Error(result.message);
+    return result;
+};
+
+export const getProfile = async () => {
+    const res = await fetch(`${BASE_URL}/admin/profile`, {
+        headers: await getHeaders()
+    });
+    const result = await res.json();
+    if (!res.ok) throw new Error(result.message);
+    return result;
+};
+
+
+
+// ============ VISITORS ============
+export const logVisitorEntry = async (data) => {
+    const res = await fetch(`${BASE_URL}/visitors/entry`, {
+        method: "POST",
+        headers: await getHeaders(),
+        body: JSON.stringify(data)
+    });
+    const result = await res.json();
+    if (!res.ok) throw new Error(result.message);
+    return result;
+};
+
+export const getTodayEntries = async () => {
+    const res = await fetch(`${BASE_URL}/visitors/today`, {
+        headers: await getHeaders()
+    });
+    const result = await res.json();
+    if (!res.ok) throw new Error(result.message);
+    return result;
+};
+
+export const getPreApprovals = async () => {
+    const res = await fetch(`${BASE_URL}/visitors/pre-approvals`, {
+        headers: await getHeaders()
+    });
+    const result = await res.json();
+    if (!res.ok) throw new Error(result.message);
+    return result;
+};
+
+export const logVisitorExit = async (id) => {
+    const res = await fetch(`${BASE_URL}/visitors/exit/${id}`, {
+        method: "PUT",
+        headers: await getHeaders()
+    });
+    const result = await res.json();
+    if (!res.ok) throw new Error(result.message);
+    return result;
+};
+
+export const createPreApproval = async (data) => {
+    const res = await fetch(`${BASE_URL}/visitors/pre-approval`, {
+        method: "POST",
+        headers: await getHeaders(),
+        body: JSON.stringify(data)
+    });
+    const result = await res.json();
+    if (!res.ok) throw new Error(result.message);
+    return result;
+};
+
+export const getMyPreApprovals = async () => {
+    const res = await fetch(`${BASE_URL}/visitors/my-approvals`, {
+        headers: await getHeaders()
+    });
+    const result = await res.json();
+    if (!res.ok) throw new Error(result.message);
+    return result;
+};
+
+// ============ ALERTS ============
+export const getMyAlerts = async () => {
+    const res = await fetch(`${BASE_URL}/alerts/my-alerts`, {
+        headers: await getHeaders()
+    });
+    const result = await res.json();
+    if (!res.ok) throw new Error(result.message);
+    return result;
+};
+
+export const updateAlertStatus = async (id, status) => {
+    const res = await fetch(`${BASE_URL}/alerts/update/${id}`, {
+        method: "PUT",
+        headers: await getHeaders(),
+        body: JSON.stringify({
+            status
+        })
+    });
+    const result = await res.json();
+    if (!res.ok) throw new Error(result.message);
+    return result;
+};
+
+export const savePushToken = async (token) => {
+    const res = await fetch(`${BASE_URL}/alerts/save-token`, {
+        method: "POST",
+        headers: await getHeaders(),
+        body: JSON.stringify({
+            token
+        })
+    });
+    const result = await res.json();
+    if (!res.ok) throw new Error(result.message);
+    return result;
+};
+
+export const markPreApprovalUsed = async (id) => {
+    const res = await fetch(`${BASE_URL}/visitors/mark-used/${id}`, {
+        method: "PUT",
+        headers: await getHeaders()
+    });
+    const result = await res.json();
+    if (!res.ok) throw new Error(result.message);
+    return result;
 };

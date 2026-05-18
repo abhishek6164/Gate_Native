@@ -1,24 +1,50 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
-    View,
-    Text,
-    TouchableOpacity,
-    StyleSheet,
-    FlatList,
-    Animated
+    View, Text, TouchableOpacity, StyleSheet,
+    FlatList, ActivityIndicator, Alert
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
+import { getPendingUsers, approveUser, rejectUser } from "../../services/authApi";
 
 export default function UserApproval() {
-    const [pendingUsers, setPendingUsers] = useState([
-        { id: 1, name: "Rahul Sharma", role: "TENANT", email: "rahul@email.com", date: "25 Mar 2024" },
-        { id: 2, name: "Amit Kumar", role: "OWNER", email: "amit@email.com", date: "26 Mar 2024" },
-    ]);
+    const [pendingUsers, setPendingUsers] = useState([]);
+    const [loading, setLoading] = useState(true);
 
-    const handleAction = (id) => {
-        // Simple filter logic for demo
-        setPendingUsers(prev => prev.filter((u) => u.id !== id));
+    const fetchPendingUsers = async () => {
+        try {
+            setLoading(true);
+            const data = await getPendingUsers();
+            setPendingUsers(data.users);
+        } catch (error) {
+            Alert.alert("Error", error.message);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        fetchPendingUsers();
+    }, []);
+
+    const handleApprove = async (id) => {
+        try {
+            await approveUser(id);
+            setPendingUsers(prev => prev.filter(u => u._id !== id));
+            Alert.alert("✅ Success", "User approved successfully!");
+        } catch (error) {
+            Alert.alert("Error", error.message);
+        }
+    };
+
+    const handleReject = async (id) => {
+        try {
+            await rejectUser(id);
+            setPendingUsers(prev => prev.filter(u => u._id !== id));
+            Alert.alert("❌ Rejected", "User has been rejected!");
+        } catch (error) {
+            Alert.alert("Error", error.message);
+        }
     };
 
     const roleStyles = {
@@ -29,7 +55,6 @@ export default function UserApproval() {
 
     const renderUserCard = ({ item }) => {
         const theme = roleStyles[item.role] || roleStyles.OWNER;
-
         return (
             <View style={styles.card}>
                 <View style={styles.cardTop}>
@@ -49,23 +74,24 @@ export default function UserApproval() {
                         <Text style={[styles.roleText, { color: theme.text }]}>{item.role}</Text>
                     </View>
                 </View>
-
                 <View style={styles.divider} />
-
                 <View style={styles.cardBottom}>
-                    <Text style={styles.dateLabel}>Applied on {item.date}</Text>
+                    <Text style={styles.dateLabel}>
+                        Applied {new Date(item.createdAt).toLocaleDateString('en-GB', {
+                            day: '2-digit', month: 'short', year: 'numeric'
+                        })}
+                    </Text>
                     <View style={styles.actionGroup}>
                         <TouchableOpacity
                             style={styles.rejectCircle}
-                            onPress={() => handleAction(item.id)}
+                            onPress={() => handleReject(item._id)}
                             activeOpacity={0.6}
                         >
                             <Text style={styles.rejectIcon}>✕</Text>
                         </TouchableOpacity>
-
                         <TouchableOpacity
                             style={styles.approveBtn}
-                            onPress={() => handleAction(item.id)}
+                            onPress={() => handleApprove(item._id)}
                             activeOpacity={0.8}
                         >
                             <Text style={styles.approveBtnText}>Approve User</Text>
@@ -76,10 +102,15 @@ export default function UserApproval() {
         );
     };
 
+    if (loading) return (
+        <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+            <ActivityIndicator size="large" color="#6366f1" />
+        </View>
+    );
+
     return (
         <SafeAreaView style={styles.container}>
             <StatusBar style="dark" />
-
             <View style={styles.header}>
                 <View>
                     <Text style={styles.headerTitle}>User Approvals</Text>
@@ -91,19 +122,18 @@ export default function UserApproval() {
                     </View>
                 )}
             </View>
-
             {pendingUsers.length === 0 ? (
                 <View style={styles.emptyContainer}>
                     <View style={styles.emptyIconCircle}>
                         <Text style={styles.emptyEmoji}>🎉</Text>
                     </View>
                     <Text style={styles.emptyTitle}>All caught up!</Text>
-                    <Text style={styles.emptySub}>No pending user approvals at the moment.</Text>
+                    <Text style={styles.emptySub}>No pending approvals at the moment.</Text>
                 </View>
             ) : (
                 <FlatList
                     data={pendingUsers}
-                    keyExtractor={(item) => item.id.toString()}
+                    keyExtractor={(item) => item._id}
                     contentContainerStyle={styles.listPadding}
                     showsVerticalScrollIndicator={false}
                     renderItem={renderUserCard}
@@ -114,183 +144,49 @@ export default function UserApproval() {
 }
 
 const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        backgroundColor: "#f8fafc",
-    },
+    container: { flex: 1, backgroundColor: "#f8fafc" },
     header: {
-        flexDirection: "row",
-        justifyContent: "space-between",
-        alignItems: "center",
-        paddingHorizontal: 20,
-        paddingVertical: 20,
-        backgroundColor: "#fff",
-        borderBottomWidth: 1,
-        borderBottomColor: "#f1f5f9",
+        flexDirection: "row", justifyContent: "space-between",
+        alignItems: "center", paddingHorizontal: 20, paddingVertical: 20,
+        backgroundColor: "#fff", borderBottomWidth: 1, borderBottomColor: "#f1f5f9",
     },
-    headerTitle: {
-        fontSize: 24,
-        fontWeight: "800",
-        color: "#1e293b",
-    },
-    headerSub: {
-        fontSize: 14,
-        color: "#64748b",
-        marginTop: 2,
-    },
+    headerTitle: { fontSize: 24, fontWeight: "800", color: "#1e293b" },
+    headerSub: { fontSize: 14, color: "#64748b", marginTop: 2 },
     countBadge: {
-        backgroundColor: "#6366f1",
-        width: 28,
-        height: 28,
-        borderRadius: 14,
-        justifyContent: "center",
-        alignItems: "center",
+        backgroundColor: "#6366f1", width: 28, height: 28,
+        borderRadius: 14, justifyContent: "center", alignItems: "center",
     },
-    countText: {
-        color: "#fff",
-        fontSize: 12,
-        fontWeight: "800",
-    },
-    listPadding: {
-        padding: 16,
-    },
+    countText: { color: "#fff", fontSize: 12, fontWeight: "800" },
+    listPadding: { padding: 16 },
     card: {
-        backgroundColor: "#fff",
-        borderRadius: 24,
-        padding: 16,
-        marginBottom: 16,
-        borderWidth: 1,
-        borderColor: "#f1f5f9",
-        shadowColor: "#000",
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.03,
-        shadowRadius: 10,
-        elevation: 2,
+        backgroundColor: "#fff", borderRadius: 24, padding: 16,
+        marginBottom: 16, borderWidth: 1, borderColor: "#f1f5f9",
+        shadowColor: "#000", shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.03, shadowRadius: 10, elevation: 2,
     },
-    cardTop: {
-        flexDirection: "row",
-        justifyContent: "space-between",
-        alignItems: "flex-start",
-    },
-    userInfo: {
-        flexDirection: "row",
-        alignItems: "center",
-        flex: 1,
-    },
-    avatar: {
-        width: 48,
-        height: 48,
-        borderRadius: 16,
-        justifyContent: "center",
-        alignItems: "center",
-        marginRight: 12,
-    },
-    avatarText: {
-        fontSize: 18,
-        fontWeight: "700",
-    },
-    nameText: {
-        fontSize: 16,
-        fontWeight: "700",
-        color: "#1e293b",
-    },
-    emailText: {
-        fontSize: 13,
-        color: "#94a3b8",
-        marginTop: 1,
-    },
-    roleBadge: {
-        flexDirection: "row",
-        alignItems: "center",
-        paddingHorizontal: 10,
-        paddingVertical: 6,
-        borderRadius: 10,
-    },
-    dot: {
-        width: 6,
-        height: 6,
-        borderRadius: 3,
-        marginRight: 6,
-    },
-    roleText: {
-        fontSize: 11,
-        fontWeight: "800",
-        letterSpacing: 0.5,
-    },
-    divider: {
-        height: 1,
-        backgroundColor: "#f1f5f9",
-        marginVertical: 16,
-    },
-    cardBottom: {
-        flexDirection: "row",
-        justifyContent: "space-between",
-        alignItems: "center",
-    },
-    dateLabel: {
-        fontSize: 12,
-        color: "#94a3b8",
-        fontWeight: "500",
-    },
-    actionGroup: {
-        flexDirection: "row",
-        alignItems: "center",
-        gap: 12,
-    },
+    cardTop: { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start" },
+    userInfo: { flexDirection: "row", alignItems: "center", flex: 1 },
+    avatar: { width: 48, height: 48, borderRadius: 16, justifyContent: "center", alignItems: "center", marginRight: 12 },
+    avatarText: { fontSize: 18, fontWeight: "700" },
+    nameText: { fontSize: 16, fontWeight: "700", color: "#1e293b" },
+    emailText: { fontSize: 13, color: "#94a3b8", marginTop: 1 },
+    roleBadge: { flexDirection: "row", alignItems: "center", paddingHorizontal: 10, paddingVertical: 6, borderRadius: 10 },
+    dot: { width: 6, height: 6, borderRadius: 3, marginRight: 6 },
+    roleText: { fontSize: 11, fontWeight: "800", letterSpacing: 0.5 },
+    divider: { height: 1, backgroundColor: "#f1f5f9", marginVertical: 16 },
+    cardBottom: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
+    dateLabel: { fontSize: 12, color: "#94a3b8", fontWeight: "500" },
+    actionGroup: { flexDirection: "row", alignItems: "center", gap: 12 },
     rejectCircle: {
-        width: 40,
-        height: 40,
-        borderRadius: 20,
-        backgroundColor: "#fff",
-        borderWidth: 1,
-        borderColor: "#fee2e2",
-        justifyContent: "center",
-        alignItems: "center",
+        width: 40, height: 40, borderRadius: 20, backgroundColor: "#fff",
+        borderWidth: 1, borderColor: "#fee2e2", justifyContent: "center", alignItems: "center",
     },
-    rejectIcon: {
-        color: "#ef4444",
-        fontSize: 16,
-        fontWeight: "bold",
-    },
-    approveBtn: {
-        backgroundColor: "#10b981",
-        paddingHorizontal: 16,
-        paddingVertical: 10,
-        borderRadius: 12,
-    },
-    approveBtnText: {
-        color: "#fff",
-        fontWeight: "700",
-        fontSize: 13,
-    },
-    emptyContainer: {
-        flex: 1,
-        justifyContent: "center",
-        alignItems: "center",
-        paddingBottom: 100,
-    },
-    emptyIconCircle: {
-        width: 80,
-        height: 80,
-        borderRadius: 40,
-        backgroundColor: "#f0fdf4",
-        justifyContent: "center",
-        alignItems: "center",
-        marginBottom: 16,
-    },
-    emptyEmoji: {
-        fontSize: 32,
-    },
-    emptyTitle: {
-        fontSize: 20,
-        fontWeight: "800",
-        color: "#1e293b",
-    },
-    emptySub: {
-        fontSize: 14,
-        color: "#94a3b8",
-        marginTop: 6,
-        textAlign: "center",
-        paddingHorizontal: 40,
-    }
+    rejectIcon: { color: "#ef4444", fontSize: 16, fontWeight: "bold" },
+    approveBtn: { backgroundColor: "#10b981", paddingHorizontal: 16, paddingVertical: 10, borderRadius: 12 },
+    approveBtnText: { color: "#fff", fontWeight: "700", fontSize: 13 },
+    emptyContainer: { flex: 1, justifyContent: "center", alignItems: "center", paddingBottom: 100 },
+    emptyIconCircle: { width: 80, height: 80, borderRadius: 40, backgroundColor: "#f0fdf4", justifyContent: "center", alignItems: "center", marginBottom: 16 },
+    emptyEmoji: { fontSize: 32 },
+    emptyTitle: { fontSize: 20, fontWeight: "800", color: "#1e293b" },
+    emptySub: { fontSize: 14, color: "#94a3b8", marginTop: 6, textAlign: "center", paddingHorizontal: 40 },
 });

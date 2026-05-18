@@ -78,7 +78,7 @@ export default function RoleBasedTabs() {
             )}
 
             {/* GUARD */}
-            {role === "GUARD" && (
+            {(role === "GUARD" || role === "SECURITY") && (
                 <>
                     <Tab.Screen name="Gate" component={EntryForm} options={{ title: "Log Entry" }} />
                     <Tab.Screen name="Visitors" component={VisitorsScreen} />
